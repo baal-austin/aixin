@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自适应跳动爱心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000;
+            overflow: hidden;
+            font-family: monospace;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            max-height: 900px;
+        }
+        
+        canvas {
+            display: block;
+            background: black;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        /* Emoji容器 */
+        .emoji-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+            overflow: hidden;
+        }
+        
+        .emoji-icon {
+            position: absolute;
+            font-size: 24px;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 5px currentColor);
+            transition: opacity 1s ease-out;
+            z-index: 2;
+        }
+        
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ff2121;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 33, 33, 0.3);
+            font-size: 12px;
+            line-height: 1.5;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 33, 33, 0.3);
+            z-index: 10;
+            justify-content: center;
+            max-width: 90%;
+            transition: opacity 0.3s ease;
+        }
+        
+        .color-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 33, 33, 0.3);
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        
+        .emoji-controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 80px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 33, 33, 0.3);
+            z-index: 10;
+            transition: opacity 0.3s ease;
+            max-width: 90%;
+            justify-content: center;
+        }
+        
+        .emoji-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .emoji-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .emoji-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            text-shadow: 0 0 3px black;
+        }
+        
+        .color-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        .color-btn.active {
+            border-color: white;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+        }
+        
+        .control-btn {
+            background: rgba(255, 33, 33, 0.2);
+            border: 1px solid rgba(255, 33, 33, 0.4);
+            color: #ff2121;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: monospace;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 33, 33, 0.4);
+            transform: scale(1.05);
+        }
+        
+        .current-color {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: opacity 0.3s ease;
+        }
+        
+        /* 隐藏/显示控制按钮 */
+        .toggle-ui-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 33, 33, 0.2);
+            border: 1px solid rgba(255, 33, 33, 0.4);
+            border-radius: 50%;
+            color: #ff2121;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-ui-btn:hover {
+            background: rgba(255, 33, 33, 0.4);
+            transform: scale(1.1);
+        }
+        
+        /* 全屏按钮 */
+        .fullscreen-btn {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 33, 33, 0.2);
+            border: 1px solid rgba(255, 33, 33, 0.4);
+            border-radius: 50%;
+            color: #ff2121;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        
+        .fullscreen-btn:hover {
+            background: rgba(255, 33, 33, 0.4);
+            transform: scale(1.1);
+        }
+        
+        /* 隐藏提示 */
+        .hide-hint {
+            position: fixed;
+            bottom: 120px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* Emoji控制按钮组 */
+        .emoji-control-group {
+            display: flex;
+            gap: 5px;
+            margin-left: 5px;
+        }
+        
+        .emoji-count-btn {
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .emoji-count-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* 隐藏UI时的样式 */
+        .ui-hidden .info-panel,
+        .ui-hidden .current-color,
+        .ui-hidden .color-controls,
+        .ui-hidden .emoji-controls,
+        .ui-hidden .controls {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .ui-hidden .hide-hint {
+            opacity: 1;
+        }
+        
+        /* 全屏样式 */
+        body:fullscreen #container,
+        body:-webkit-full-screen #container,
+        body:-moz-full-screen #container,
+        body:-ms-fullscreen #container {
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+        
+        body:fullscreen canvas,
+        body:-webkit-full-screen canvas,
+        body:-moz-full-screen canvas,
+        body:-ms-fullscreen canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="emoji-container" id="emojiContainer"></div>
+        <canvas id="heartCanvas"></canvas>
+        
+        <div class="info-panel">
+            <div>自适应跳动爱心</div>
+            <div>粒子数: <span id="particleCount">0</span></div>
+            <div>FPS: <span id="fps">0</span></div>
+            <div>速度: <span id="speedMultiplier">1.0</span>x</div>
+            <div>Emoji: <span id="emojiCount">0</span>/<span id="maxEmojiCount">100</span> (生成: <span id="emojiStatus">开启</span>)</div>
+        </div>
+        
+        <div class="current-color" id="currentColorDisplay">
+            当前颜色: <span id="colorName">红色</span>
+        </div>
+        
+        <div class="emoji-controls">
+            <div class="emoji-btn" data-emoji="❤️">❤️</div>
+            <div class="emoji-btn" data-emoji="⭐">⭐</div>
+            <div class="emoji-btn" data-emoji="🎄">🎄</div>
+            <div class="emoji-btn" data-emoji="🎁">🎁</div>
+            <div class="emoji-btn" data-emoji="❄️">❄️</div>
+            <div class="emoji-btn" data-emoji="✨">✨</div>
+            <div class="emoji-btn" data-emoji="🌸">🌸</div>
+            <div class="emoji-btn" data-emoji="🌈">🌈</div>
+            <div class="emoji-btn" data-emoji="🎉">🎉</div>
+            <div class="emoji-btn" data-emoji="🔥">🔥</div>
+            <div class="emoji-btn" data-emoji="random" title="随机Emoji">🎲</div>
+            <div class="emoji-control-group">
+                <button class="control-btn" id="btnToggleEmoji" style="width: 80px; height: 40px; font-size: 12px;">停止生成</button>
+                <div class="emoji-count-btn" id="btnDecreaseEmoji" title="减少Emoji数量">-</div>
+                <div class="emoji-count-btn" id="btnIncreaseEmoji" title="增加Emoji数量">+</div>
+            </div>
+        </div>
+        
+        <div class="color-controls">
+            <div class="color-btn" style="background: linear-gradient(135deg, #ff0000, #ff4444);" 
+                 data-color="red" data-hue-start="0" data-hue-range="30">❤️</div>
+            <div class="color-btn" style="background: linear-gradient(135deg, #ff8800, #ffaa44);" 
+                 data-color="orange" data-hue-start="30" data-hue-range="30">🧡</div>
+            <div class="color-btn" style="background: linear-gradient(135deg, #ffff00, #ffff88);" 
+                 data-color="yellow" data-hue-start="60" data-hue-range="30">💛</div>
+            <div class="color-btn" style="background: linear-gradient(135deg, #00ff00, #44ff44);" 
+                 data-color="green" data-hue-start="120" data-hue-range="30">💚</div>
+            <div class="color-btn" style="background: linear-gradient(135deg, #0088ff, #44aaff);" 
+                 data-color="blue" data-hue-start="210" data-hue-range="30">💙</div>
+            <div class="color-btn" style="background: linear-gradient(135deg, #4b0082, #8a2be2);" 
+                 data-color="indigo" data-hue-start="270" data-hue-range="30">💜</div>
+            <div class="color-btn" style="background: linear-gradient(135deg, #ff00ff, #ff88ff);" 
+                 data-color="violet" data-hue-start="300" data-hue-range="30">🌸</div>
+            <div class="color-btn" style="background: linear-gradient(45deg, 
+                #ff0000 0%, #ff8800 17%, #ffff00 33%, 
+                #00ff00 50%, #0088ff 67%, #4b0082 83%, #ff00ff 100%);" 
+                 data-color="rainbow" data-hue-start="0" data-hue-range="360">🌈</div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="btnToggle">暂停/播放</button>
+            <button class="control-btn" id="btnReset">重置</button>
+            <button class="control-btn" id="btnAddParticles">增加粒子</button>
+            <button class="control-btn" id="btnRemoveParticles">减少粒子</button>
+            <button class="control-btn" id="btnSpeedUp">加速</button>
+            <button class="control-btn" id="btnSlowDown">减速</button>
+        </div>
+        
+        <!-- 切换UI显示/隐藏的按钮 -->
+        <div class="toggle-ui-btn" id="toggleUI">👁️</div>
+        
+        <!-- 全屏按钮 -->
+        <div class="fullscreen-btn" id="fullscreenBtn">⛶</div>
+        
+        <div class="hide-hint" id="hideHint">
+            按 H 键或点击👁️按钮<br>显示/隐藏控制面板<br>
+            按 F 键或点击⛶按钮<br>切换全屏模式
+        </div>
+    </div>
+
+    <script>
+        // Emoji管理类
+        class EmojiManager {
+            constructor() {
+                this.container = document.getElementById('emojiContainer');
+                this.emojis = [];
+                this.activeEmoji = '❤️';
+                this.emojiSets = {
+                    heart: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎'],
+                    star: ['⭐', '🌟', '✨', '💫', '🎇', '🎆', '🌠'],
+                    holiday: ['🎄', '🎁', '🎅', '🤶', '🧑‍🎄', '☃️', '⛄', '🦌'],
+                    winter: ['❄️', '🌨️', '⛷️', '🎿', '🛷', '🏂'],
+                    nature: ['🌸', '🌺', '🌹', '🌷', '💐', '🌼', '🌻'],
+                    rainbow: ['🌈', '☀️', '🌤️', '⛅', '🌥️', '☁️', '🌦️'],
+                    celebration: ['🎉', '🎊', '🎈', '🥳', '🎂', '🍾', '🥂'],
+                    fire: ['🔥', '💥', '🌋', '🧨', '🎇', '🎆'],
+                    random: []
+                };
+                
+                for (let category in this.emojiSets) {
+                    if (category !== 'random') {
+                        this.emojiSets.random.push(...this.emojiSets[category]);
+                    }
+                }
+                
+                this.isActive = true;
+                this.maxEmojis = 100;  // 最大Emoji数量
+                this.spawnRate = 0.5;
+                this.lastSpawnTime = 0;
+                this.spawnInterval = 500;
+                
+                this.init();
+            }
+            
+            init() {
+                // 初始化Emoji按钮
+                const emojiButtons = document.querySelectorAll('.emoji-btn');
+                emojiButtons.forEach(btn => {
+                    const emoji = btn.dataset.emoji;
+                    btn.addEventListener('click', () => {
+                        if (emoji === 'random') {
+                            this.activeEmoji = 'random';
+                        } else {
+                            this.activeEmoji = emoji;
+                        }
+                        
+                        emojiButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                });
+                
+                emojiButtons[0].classList.add('active');
+                
+                // Emoji生成开关按钮
+                const toggleBtn = document.getElementById('btnToggleEmoji');
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleActive();
+                });
+                
+                // Emoji数量控制按钮
+                document.getElementById('btnIncreaseEmoji').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.changeMaxEmojis(20);
+                });
+                
+                document.getElementById('btnDecreaseEmoji').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.changeMaxEmojis(-20);
+                });
+                
+                // 鼠标点击生成Emoji
+                document.getElementById('heartCanvas').addEventListener('click', (e) => {
+                    this.spawnEmojiAt(e.clientX, e.clientY, true);
+                });
+                
+                // 更新显示最大Emoji数量
+                this.updateMaxEmojiDisplay();
+                
+                this.animate();
+            }
+            
+            toggleActive() {
+                this.isActive = !this.isActive;
+                const toggleBtn = document.getElementById('btnToggleEmoji');
+                const statusSpan = document.getElementById('emojiStatus');
+                
+                if (this.isActive) {
+                    toggleBtn.textContent = '停止生成';
+                    toggleBtn.style.backgroundColor = 'rgba(255, 33, 33, 0.2)';
+                    statusSpan.textContent = '开启';
+                    console.log('Emoji生成已开启');
+                } else {
+                    toggleBtn.textContent = '开始生成';
+                    toggleBtn.style.backgroundColor = 'rgba(0, 255, 0, 0.2)';
+                    statusSpan.textContent = '关闭';
+                    console.log('Emoji生成已关闭');
+                }
+            }
+            
+            changeMaxEmojis(delta) {
+                this.maxEmojis = Math.max(20, Math.min(500, this.maxEmojis + delta));
+                this.updateMaxEmojiDisplay();
+                console.log(`最大Emoji数量调整为: ${this.maxEmojis}`);
+                
+                // 如果当前Emoji数量超过新的最大值，移除多余的Emoji
+                if (this.emojis.length > this.maxEmojis) {
+                    const toRemove = this.emojis.length - this.maxEmojis;
+                    for (let i = 0; i < toRemove; i++) {
+                        if (this.emojis[i]) {
+                            this.emojis[i].element.remove();
+                        }
+                    }
+                    this.emojis = this.emojis.slice(toRemove);
+                    this.updateEmojiCount();
+                }
+            }
+            
+            updateMaxEmojiDisplay() {
+                document.getElementById('maxEmojiCount').textContent = this.maxEmojis;
+            }
+            
+            spawnEmojiAt(x, y, isClick = false) {
+                if (!this.isActive) return;
+                if (this.emojis.length >= this.maxEmojis) return;
+                
+                const rect = document.getElementById('heartCanvas').getBoundingClientRect();
+                
+                const posX = (x - rect.left) / rect.width * 100;
+                const posY = (y - rect.top) / rect.height * 100;
+                
+                let emojiChar;
+                if (this.activeEmoji === 'random') {
+                    const randomSet = this.emojiSets.random;
+                    emojiChar = randomSet[Math.floor(Math.random() * randomSet.length)];
+                } else {
+                    emojiChar = this.activeEmoji;
+                }
+                
+                const emoji = document.createElement('div');
+                emoji.className = 'emoji-icon';
+                emoji.textContent = emojiChar;
+                emoji.style.left = `${posX}%`;
+                emoji.style.top = `${posY}%`;
+                
+                const size = isClick ? 
+                    (30 + Math.random() * 20) : 
+                    (20 + Math.random() * 15);
+                emoji.style.fontSize = `${size}px`;
+                
+                const rotation = Math.random() * 360;
+                emoji.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+                
+                if (this.shouldAddColor(emojiChar)) {
+                    const hue = Math.random() * 360;
+                    emoji.style.color = `hsl(${hue}, 80%, 70%)`;
+                }
+                
+                emoji.animationProps = {
+                    x: posX,
+                    y: posY,
+                    speed: 0.5 + Math.random() * 1.5,
+                    rotationSpeed: (Math.random() - 0.5) * 2,
+                    sway: Math.random() * 0.5,
+                    swaySpeed: 0.5 + Math.random() * 1,
+                    life: 10 + Math.random() * 10,
+                    opacity: 1,
+                    scale: 1,
+                    created: Date.now(),
+                    isClick: isClick,
+                    clickBurst: isClick ? 5 : 0
+                };
+                
+                this.container.appendChild(emoji);
+                this.emojis.push({
+                    element: emoji,
+                    props: emoji.animationProps
+                });
+                
+                if (isClick && emoji.animationProps.clickBurst > 0) {
+                    for (let i = 0; i < emoji.animationProps.clickBurst; i++) {
+                        setTimeout(() => {
+                            this.spawnEmojiAt(
+                                x + (Math.random() - 0.5) * 50,
+                                y + (Math.random() - 0.5) * 50,
+                                false
+                            );
+                        }, i * 50);
+                    }
+                }
+                
+                this.updateEmojiCount();
+            }
+            
+            shouldAddColor(emoji) {
+                const coloredEmojis = ['❤️', '🧡', '💛', '💚', '💙', '💜', '🌈', '✨', '⭐', '🌟', '🎄', '🎁', '🌸', '🔥'];
+                return coloredEmojis.includes(emoji);
+            }
+            
+            autoSpawn() {
+                if (!this.isActive) return;
+                
+                const now = Date.now();
+                if (now - this.lastSpawnTime < this.spawnInterval) return;
+                
+                if (Math.random() < this.spawnRate && this.emojis.length < this.maxEmojis * 0.7) {
+                    const canvas = document.getElementById('heartCanvas');
+                    const rect = canvas.getBoundingClientRect();
+                    
+                    const x = rect.left + Math.random() * rect.width;
+                    const y = rect.top;
+                    
+                    this.spawnEmojiAt(x, y, false);
+                    this.lastSpawnTime = now;
+                }
+            }
+            
+            updateEmojis() {
+                const currentTime = Date.now();
+                
+                for (let i = this.emojis.length - 1; i >= 0; i--) {
+                    const emoji = this.emojis[i];
+                    const props = emoji.props;
+                    
+                    props.y += props.speed;
+                    props.x += Math.sin(currentTime * 0.001 * props.swaySpeed) * props.sway;
+                    
+                    const rotation = parseFloat(emoji.element.style.transform.match(/rotate\(([-0-9.]+)deg\)/)?.[1] || 0);
+                    emoji.element.style.transform = 
+                        `translate(-50%, -50%) rotate(${rotation + props.rotationSpeed}deg)`;
+                    
+                    emoji.element.style.left = `${props.x}%`;
+                    emoji.element.style.top = `${props.y}%`;
+                    
+                    props.life -= 0.016;
+                    
+                    if (props.life < 3) {
+                        props.opacity = props.life / 3;
+                        emoji.element.style.opacity = props.opacity;
+                    }
+                    
+                    const rect = document.getElementById('container').getBoundingClientRect();
+                    const elementRect = emoji.element.getBoundingClientRect();
+                    
+                    if (props.life <= 0 || 
+                        elementRect.top > rect.bottom + 50 ||
+                        elementRect.left > rect.right + 50 ||
+                        elementRect.right < rect.left - 50) {
+                        
+                        emoji.element.remove();
+                        this.emojis.splice(i, 1);
+                    }
+                }
+                
+                this.updateEmojiCount();
+            }
+            
+            updateEmojiCount() {
+                document.getElementById('emojiCount').textContent = this.emojis.length;
+            }
+            
+            animate() {
+                this.autoSpawn();
+                this.updateEmojis();
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // 界面显示控制类
+        class UIManager {
+            constructor() {
+                this.isUIVisible = true;
+                this.toggleBtn = document.getElementById('toggleUI');
+                this.fullscreenBtn = document.getElementById('fullscreenBtn');
+                this.hint = document.getElementById('hideHint');
+                this.init();
+            }
+            
+            init() {
+                // 添加H键切换控制面板显示
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'h' || e.key === 'H') {
+                        this.toggleUI();
+                    } else if (e.key === 'f' || e.key === 'F') {
+                        this.toggleFullscreen();
+                    }
+                });
+                
+                // 添加点击按钮切换控制面板显示
+                this.toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleUI();
+                });
+                
+                // 添加全屏按钮事件
+                this.fullscreenBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleFullscreen();
+                });
+                
+                // 监听全屏变化
+                document.addEventListener('fullscreenchange', this.handleFullscreenChange.bind(this));
+                document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange.bind(this));
+                document.addEventListener('mozfullscreenchange', this.handleFullscreenChange.bind(this));
+                document.addEventListener('MSFullscreenChange', this.handleFullscreenChange.bind(this));
+            }
+            
+            toggleUI() {
+                this.isUIVisible = !this.isUIVisible;
+                const container = document.getElementById('container');
+                
+                if (this.isUIVisible) {
+                    container.classList.remove('ui-hidden');
+                    this.toggleBtn.innerHTML = '👁️';
+                    console.log('显示控制面板');
+                } else {
+                    container.classList.add('ui-hidden');
+                    this.toggleBtn.innerHTML = '👁️‍🗨️';
+                    console.log('隐藏控制面板');
+                }
+            }
+            
+            toggleFullscreen() {
+                if (!document.fullscreenElement && 
+                    !document.webkitFullscreenElement && 
+                    !document.mozFullScreenElement && 
+                    !document.msFullscreenElement) {
+                    // 进入全屏
+                    const container = document.getElementById('container');
+                    if (container.requestFullscreen) {
+                        container.requestFullscreen();
+                    } else if (container.webkitRequestFullscreen) {
+                        container.webkitRequestFullscreen();
+                    } else if (container.mozRequestFullScreen) {
+                        container.mozRequestFullScreen();
+                    } else if (container.msRequestFullscreen) {
+                        container.msRequestFullscreen();
+                    }
+                } else {
+                    // 退出全屏
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                }
+            }
+            
+            handleFullscreenChange() {
+                const isFullscreen = !!(
+                    document.fullscreenElement ||
+                    document.webkitFullscreenElement ||
+                    document.mozFullScreenElement ||
+                    document.msFullscreenElement
+                );
+                
+                // 更新全屏按钮样式
+                if (isFullscreen) {
+                    this.fullscreenBtn.innerHTML = '⏹';
+                    this.fullscreenBtn.style.backgroundColor = 'rgba(255, 33, 33, 0.4)';
+                    console.log('进入全屏模式');
+                    
+                    // 全屏时强制更新Canvas尺寸
+                    setTimeout(() => {
+                        if (window.heartAnimation) {
+                            window.heartAnimation.resizeCanvas();
+                        }
+                    }, 100);
+                } else {
+                    this.fullscreenBtn.innerHTML = '⛶';
+                    this.fullscreenBtn.style.backgroundColor = 'rgba(255, 33, 33, 0.2)';
+                    console.log('退出全屏模式');
+                    
+                    // 退出全屏时强制更新Canvas尺寸
+                    setTimeout(() => {
+                        if (window.heartAnimation) {
+                            window.heartAnimation.resizeCanvas();
+                        }
+                    }, 100);
+                }
+            }
+        }
+
+        // 原有配置参数
+        const CONFIG = {
+            BASE_WIDTH: 800,
+            BASE_HEIGHT: 600,
+            IMAGE_ENLARGE: 11,
+            INITIAL_PARTICLE_COUNT: 4000,
+            BEAT_FREQUENCY: 4,
+            SCATTER_BETA: 0.12,
+            SHRINK_FORCE: 0.520,
+            
+            COLOR_MODES: {
+                red: { name: "红色", hueStart: 0, hueRange: 30 },
+                orange: { name: "橙色", hueStart: 30, hueRange: 30 },
+                yellow: { name: "黄色", hueStart: 60, hueRange: 30 },
+                green: { name: "绿色", hueStart: 120, hueRange: 30 },
+                blue: { name: "蓝色", hueStart: 210, hueRange: 30 },
+                indigo: { name: "靛蓝", hueStart: 270, hueRange: 30 },
+                violet: { name: "紫色", hueStart: 300, hueRange: 30 },
+                rainbow: { name: "彩虹", hueStart: 0, hueRange: 360 }
+            }
+        };
+
+        // 原有HeartParticle类
+        class HeartParticle {
+            constructor(x, y, colorMode = 'red') {
+                this.originalX = x;
+                this.originalY = y;
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.phase = Math.random() * Math.PI * 2;
+                this.speed = 0.5 + Math.random() * 0.5;
+                
+                this.colorMode = colorMode;
+                this.baseHue = CONFIG.COLOR_MODES[colorMode].hueStart;
+                this.hueRange = CONFIG.COLOR_MODES[colorMode].hueRange;
+                this.initColor();
+            }
+            
+            initColor() {
+                if (this.colorMode === 'rainbow') {
+                    this.hue = Math.random() * 360;
+                } else {
+                    this.hue = this.baseHue + Math.random() * this.hueRange;
+                }
+                
+                this.saturation = 80 + Math.random() * 20;
+                this.lightness = 50 + Math.random() * 20;
+                this.colorSpeed = 0.5 + Math.random() * 1.0;
+            }
+            
+            update(ratio, time, centerX, centerY, speedMultiplier) {
+                const effectiveTime = time * speedMultiplier;
+                const dx = this.originalX - centerX;
+                const dy = this.originalY - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                const force = 1 / Math.pow(distance + 0.1, CONFIG.SHRINK_FORCE);
+                
+                this.x = this.originalX - ratio * force * dx * 0.5 + (Math.random() - 0.5);
+                this.y = this.originalY - ratio * force * dy * 0.5 + (Math.random() - 0.5);
+                
+                const wave = Math.sin(effectiveTime * 2 + this.phase) * 0.2;
+                this.x += Math.sin(effectiveTime + this.phase) * wave;
+                this.y += Math.cos(effectiveTime + this.phase) * wave;
+                
+                this.size = (Math.random() * 1.0 + 0.5) * (1 + Math.sin(effectiveTime * 3 + this.phase) * 0.2);
+                this.updateColor(effectiveTime);
+            }
+            
+            updateColor(time) {
+                if (this.colorMode === 'rainbow') {
+                    this.hue = (this.hue + this.colorSpeed * 0.5) % 360;
+                    this.saturation = 85 + Math.sin(time * 0.5 + this.phase) * 10;
+                    this.lightness = 50 + Math.sin(time * 0.3 + this.phase * 2) * 15;
+                } else {
+                    const hueVariation = Math.sin(time * this.colorSpeed + this.phase) * 10;
+                    this.hue = (this.baseHue + hueVariation) % 360;
+                    this.saturation = 80 + Math.sin(time * 0.8 + this.phase) * 15;
+                    this.lightness = 50 + Math.sin(time * 1.2 + this.phase) * 20;
+                }
+            }
+            
+            getColor() {
+                return `hsl(${this.hue % 360}, ${Math.min(100, this.saturation)}%, ${Math.min(100, this.lightness)}%)`;
+            }
+            
+            changeColorMode(colorMode) {
+                this.colorMode = colorMode;
+                this.baseHue = CONFIG.COLOR_MODES[colorMode].hueStart;
+                this.hueRange = CONFIG.COLOR_MODES[colorMode].hueRange;
+                this.initColor();
+            }
+        }
+
+        // 原有HeartAnimation类
+        class HeartAnimation {
+            constructor() {
+                this.canvas = document.getElementById('heartCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.dpr = window.devicePixelRatio || 1;
+                
+                this.particles = [];
+                this.time = 0;
+                this.frameCount = 0;
+                this.isPaused = false;
+                this.lastFrameTime = 0;
+                this.fps = 0;
+                this.speedMultiplier = 1.0;
+                this.particleCount = CONFIG.INITIAL_PARTICLE_COUNT;
+                this.currentColorMode = 'red';
+                
+                this.resizeCanvas();
+                window.addEventListener('resize', () => {
+                    this.resizeCanvas();
+                    this.initParticles();
+                });
+                
+                this.mouseX = null;
+                this.mouseY = null;
+                
+                this.initParticles();
+                this.animate();
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    this.handleMouseMove(e);
+                });
+                
+                this.canvas.addEventListener('mouseleave', () => {
+                    this.mouseX = null;
+                    this.mouseY = null;
+                });
+                
+                this.initColorControls();
+                
+                // 保存到全局，方便全屏时调用
+                window.heartAnimation = this;
+            }
+            
+            resizeCanvas() {
+                const container = document.getElementById('container');
+                const displayWidth = container.clientWidth;
+                const displayHeight = container.clientHeight;
+                
+                this.canvas.style.width = displayWidth + 'px';
+                this.canvas.style.height = displayHeight + 'px';
+                this.canvas.width = displayWidth * this.dpr;
+                this.canvas.height = displayHeight * this.dpr;
+                this.ctx.scale(this.dpr, this.dpr);
+                
+                this.scaleX = displayWidth / CONFIG.BASE_WIDTH;
+                this.scaleY = displayHeight / CONFIG.BASE_HEIGHT;
+                this.scale = Math.min(this.scaleX, this.scaleY) * 0.9;
+                
+                this.centerX = displayWidth / 2;
+                this.centerY = displayHeight / 2;
+                this.enlarge = Math.min(displayWidth, displayHeight) / 60;
+                
+                console.log(`Canvas尺寸: ${displayWidth}x${displayHeight}, 像素: ${this.canvas.width}x${this.canvas.height}`);
+            }
+            
+            initColorControls() {
+                const colorButtons = document.querySelectorAll('.color-btn');
+                colorButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const colorMode = btn.dataset.color;
+                        this.changeColorMode(colorMode);
+                        
+                        colorButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                });
+                
+                document.querySelector('.color-btn[data-color="red"]').classList.add('active');
+            }
+            
+            changeColorMode(colorMode) {
+                console.log(`切换颜色模式: ${CONFIG.COLOR_MODES[colorMode].name}`);
+                this.currentColorMode = colorMode;
+                
+                for (let particle of this.particles) {
+                    particle.changeColorMode(colorMode);
+                }
+                
+                document.getElementById('colorName').textContent = CONFIG.COLOR_MODES[colorMode].name;
+                document.getElementById('currentColorDisplay').style.color = 
+                    this.getColorModeDisplayColor(colorMode);
+            }
+            
+            getColorModeDisplayColor(colorMode) {
+                const colors = {
+                    red: '#ff4444',
+                    orange: '#ffaa44',
+                    yellow: '#ffff44',
+                    green: '#44ff44',
+                    blue: '#44aaff',
+                    indigo: '#8a2be2',
+                    violet: '#ff88ff',
+                    rainbow: '#ffffff'
+                };
+                return colors[colorMode];
+            }
+            
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                
+                this.mouseX = (e.clientX - rect.left) * scaleX / this.dpr;
+                this.mouseY = (e.clientY - rect.top) * scaleY / this.dpr;
+                
+                for (let particle of this.particles) {
+                    const dx = particle.x - this.mouseX;
+                    const dy = particle.y - this.mouseY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 50) {
+                        const force = (50 - distance) / 50;
+                        particle.x += dx / distance * force * 2;
+                        particle.y += dy / distance * force * 2;
+                        
+                        if (this.currentColorMode === 'rainbow') {
+                            const angle = Math.atan2(dy, dx);
+                            particle.hue = (angle * 180 / Math.PI + 360) % 360;
+                        }
+                    }
+                }
+            }
+            
+            heartFunction(t, shrinkRatio = this.enlarge) {
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                
+                return {
+                    x: x * shrinkRatio + this.centerX,
+                    y: y * shrinkRatio + this.centerY
+                };
+            }
+            
+            scatterInside(x, y, beta = 0.15) {
+                const ratioX = -beta * Math.log(Math.random());
+                const ratioY = -beta * Math.log(Math.random());
+                
+                const dx = ratioX * (x - this.centerX);
+                const dy = ratioY * (y - this.centerY);
+                
+                return {
+                    x: x - dx,
+                    y: y - dy
+                };
+            }
+            
+            curve(p) {
+                return 2 * (2 * Math.sin(CONFIG.BEAT_FREQUENCY * p)) / (2 * Math.PI);
+            }
+            
+            initParticles() {
+                console.log(`初始化 ${this.particleCount} 个粒子 (颜色: ${CONFIG.COLOR_MODES[this.currentColorMode].name})...`);
+                this.particles = [];
+                
+                const basePoints = [];
+                const pointCount = 1000;
+                
+                for (let i = 0; i < pointCount; i++) {
+                    const t = Math.random() * Math.PI * 2;
+                    basePoints.push(this.heartFunction(t));
+                }
+                
+                for (let i = 0; i < this.particleCount; i++) {
+                    const randomPoint = basePoints[Math.floor(Math.random() * basePoints.length)];
+                    const scattered = this.scatterInside(randomPoint.x, randomPoint.y, CONFIG.SCATTER_BETA);
+                    
+                    this.particles.push(new HeartParticle(
+                        scattered.x, 
+                        scattered.y,
+                        this.currentColorMode
+                    ));
+                }
+            }
+            
+            updateParticles(deltaTime) {
+                const effectiveTime = this.time * this.speedMultiplier;
+                const ratio = 8 * this.curve(effectiveTime * 0.1 * Math.PI);
+                
+                for (let particle of this.particles) {
+                    particle.update(ratio, this.time, this.centerX, this.centerY, this.speedMultiplier);
+                }
+                
+                this.time += deltaTime * 2 * this.speedMultiplier;
+            }
+            
+            drawParticles() {
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+                this.ctx.fillRect(0, 0, this.canvas.width / this.dpr, this.canvas.height / this.dpr);
+                
+                if (this.currentColorMode === 'rainbow') {
+                    const gradient = this.ctx.createRadialGradient(
+                        this.centerX, this.centerY, 0,
+                        this.centerX, this.centerY, Math.min(this.canvas.width, this.canvas.height) / 2
+                    );
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fillRect(0, 0, this.canvas.width / this.dpr, this.canvas.height / this.dpr);
+                }
+                
+                for (let particle of this.particles) {
+                    this.ctx.beginPath();
+                    this.ctx.fillStyle = particle.getColor();
+                    
+                    const particleSize = particle.size * this.dpr;
+                    this.ctx.arc(
+                        particle.x, 
+                        particle.y, 
+                        particleSize, 
+                        0, 
+                        Math.PI * 2
+                    );
+                    this.ctx.fill();
+                    
+                    if (this.currentColorMode === 'rainbow') {
+                        this.ctx.beginPath();
+                        this.ctx.fillStyle = particle.getColor().replace(')', ', 0.3)').replace('hsl', 'hsla');
+                        this.ctx.arc(
+                            particle.x, 
+                            particle.y, 
+                            particleSize * 1.5, 
+                            0, 
+                            Math.PI * 2
+                        );
+                        this.ctx.fill();
+                    }
+                }
+            }
+            
+            updateStats(currentTime) {
+                if (currentTime - this.lastFrameTime >= 1000) {
+                    this.fps = this.frameCount;
+                    this.frameCount = 0;
+                    this.lastFrameTime = currentTime;
+                    
+                    document.getElementById('particleCount').textContent = 
+                        this.particles.length.toLocaleString();
+                    document.getElementById('fps').textContent = this.fps;
+                    document.getElementById('speedMultiplier').textContent = 
+                        this.speedMultiplier.toFixed(1);
+                }
+                this.frameCount++;
+            }
+            
+            animate(currentTime = 0) {
+                if (!this.isPaused) {
+                    const deltaTime = Math.min(0.1, (currentTime - (this.lastFrameTime || currentTime)) / 1000);
+                    
+                    this.updateParticles(deltaTime);
+                    this.drawParticles();
+                    this.updateStats(currentTime);
+                }
+                
+                requestAnimationFrame((time) => this.animate(time));
+            }
+            
+            togglePause() {
+                this.isPaused = !this.isPaused;
+            }
+            
+            reset() {
+                this.time = 0;
+                this.speedMultiplier = 1.0;
+                this.particleCount = CONFIG.INITIAL_PARTICLE_COUNT;
+                this.currentColorMode = 'red';
+                this.initParticles();
+                
+                document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('.color-btn[data-color="red"]').classList.add('active');
+                document.getElementById('colorName').textContent = CONFIG.COLOR_MODES.red.name;
+                document.getElementById('currentColorDisplay').style.color = '#ff4444';
+            }
+            
+            changeSpeed(factor) {
+                this.speedMultiplier *= factor;
+                this.speedMultiplier = Math.max(0.1, Math.min(5.0, this.speedMultiplier));
+            }
+            
+            changeParticleCount(delta) {
+                this.particleCount = Math.max(100, Math.min(10000, this.particleCount + delta));
+                this.initParticles();
+                console.log(`粒子数调整为: ${this.particleCount}`);
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化原有的爱心动画
+            const heart = new HeartAnimation();
+            
+            // 初始化新的Emoji管理器
+            const emojiManager = new EmojiManager();
+            
+            // 初始化界面管理器
+            const uiManager = new UIManager();
+            
+            // 原有控制按钮事件
+            document.getElementById('btnToggle').addEventListener('click', (e) => {
+                e.stopPropagation();
+                heart.togglePause();
+                document.getElementById('btnToggle').textContent = 
+                    heart.isPaused ? '播放' : '暂停';
+            });
+            
+            document.getElementById('btnReset').addEventListener('click', (e) => {
+                e.stopPropagation();
+                heart.reset();
+                document.getElementById('speedMultiplier').textContent = '1.0';
+            });
+            
+            document.getElementById('btnAddParticles').addEventListener('click', (e) => {
+                e.stopPropagation();
+                heart.changeParticleCount(500);
+            });
+            
+            document.getElementById('btnRemoveParticles').addEventListener('click', (e) => {
+                e.stopPropagation();
+                heart.changeParticleCount(-500);
+            });
+            
+            document.getElementById('btnSpeedUp').addEventListener('click', (e) => {
+                e.stopPropagation();
+                heart.changeSpeed(1.5);
+            });
+            
+            document.getElementById('btnSlowDown').addEventListener('click', (e) => {
+                e.stopPropagation();
+                heart.changeSpeed(0.67);
+            });
+            
+            // 键盘控制
+            document.addEventListener('keydown', (e) => {
+                switch(e.key) {
+                    case ' ':
+                        heart.togglePause();
+                        e.preventDefault();
+                        break;
+                    case 'r':
+                    case 'R':
+                        heart.reset();
+                        break;
+                    case '+':
+                        heart.changeParticleCount(500);
+                        break;
+                    case '-':
+                        heart.changeParticleCount(-500);
+                        break;
+                    case 'ArrowUp':
+                        heart.changeSpeed(1.5);
+                        break;
+                    case 'ArrowDown':
+                        heart.changeSpeed(0.67);
+                        break;
+                    case '1':
+                        heart.changeColorMode('red');
+                        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('.color-btn[data-color="red"]').classList.add('active');
+                        break;
+                    case '2':
+                        heart.changeColorMode('orange');
+                        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('.color-btn[data-color="orange"]').classList.add('active');
+                        break;
+                    case '3':
+                        heart.changeColorMode('yellow');
+                        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('.color-btn[data-color="yellow"]').classList.add('active');
+                        break;
+                    case '4':
+                        heart.changeColorMode('green');
+                        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('.color-btn[data-color="green"]').classList.add('active');
+                        break;
+                    case '5':
+                        heart.changeColorMode('blue');
+                        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('.color-btn[data-color="blue"]').classList.add('active');
+                        break;
+                    case '6':
+                        heart.changeColorMode('indigo');
+                        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('.color-btn[data-color="indigo"]').classList.add('active');
+                        break;
+                    case '7':
+                        heart.changeColorMode('violet');
+                        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('.color-btn[data-color="violet"]').classList.add('active');
+                        break;
+                    case '8':
+                        heart.changeColorMode('rainbow');
+                        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                        document.querySelector('.color-btn[data-color="rainbow"]').classList.add('active');
+                        break;
+                    // Emoji相关快捷键
+                    case 'e':
+                    case 'E':
+                        const canvas = document.getElementById('heartCanvas');
+                        const rect = canvas.getBoundingClientRect();
+                        const x = rect.left + Math.random() * rect.width;
+                        const y = rect.top + Math.random() * rect.height / 2;
+                        emojiManager.spawnEmojiAt(x, y, true);
+                        break;
+                    case 'h':
+                    case 'H':
+                        uiManager.toggleUI();
+                        break;
+                    case 'f':
+                    case 'F':
+                        uiManager.toggleFullscreen();
+                        break;
+                }
+            });
+            
+            console.log('爱心动画已启动！');
+            console.log('操作提示：');
+            console.log('- 空格键：暂停/播放');
+            console.log('- H键：显示/隐藏控制面板');
+            console.log('- F键：切换全屏模式');
+            console.log('- 数字键1-8：切换颜色');
+            console.log('- E键：随机生成Emoji');
+            console.log('- 点击画布：在点击位置生成Emoji');
+            console.log('- 点击👁️按钮：显示/隐藏控制面板');
+            console.log('- 点击⛶按钮：切换全屏模式');
+        });
+    </script>
+</body>
+</html>
